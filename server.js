@@ -12,19 +12,9 @@ const PORT = process.env.PORT || 3001;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
 // CORS sozlamalari - Production uchun
-const allowedOrigins = process.env.ALLOWED_ORIGINS 
-  ? process.env.ALLOWED_ORIGINS.split(',')
-  : ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:4173'];
-
+// Barcha originlarga ruxsat berish (Test uchun)
 const corsOptions = {
-  origin: function (origin, callback) {
-    // Development rejimida yoki origin yo'q bo'lsa (Postman kabi) ruxsat berish
-    if (NODE_ENV === 'development' || !origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('CORS xatosi: Bu origin ruxsat etilmagan'));
-    }
-  },
+  origin: true, // So'rov yuborgan har qanday manzilga ruxsat berish
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -51,7 +41,7 @@ if (!fs.existsSync(dataDir)) {
 }
 
 // Certificates JSON fayl yo'li - backend/data/ papkasida
-const certificatesPath = process.env.CERTIFICATES_PATH || 
+const certificatesPath = process.env.CERTIFICATES_PATH ||
   path.join(__dirname, 'data/certificates.json');
 
 // Agar fayl yo'q bo'lsa, yaratish yoki public/certificates.json dan ko'chirish
@@ -144,7 +134,7 @@ app.get('/api/certificates', (req, res) => {
     });
   } catch (error) {
     console.error('GET /api/certificates error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
       error: 'Server xatosi: Sertifikatlarni olishda muammo',
       message: NODE_ENV === 'development' ? error.message : undefined,
@@ -159,9 +149,9 @@ app.post('/api/certificates', (req, res) => {
 
     // Validation
     if (!studentName || !courseName || !date) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        error: 'Iltimos, barcha majburiy maydonlarni to\'ldiring (studentName, courseName, date)' 
+        error: 'Iltimos, barcha majburiy maydonlarni to\'ldiring (studentName, courseName, date)'
       });
     }
 
@@ -172,14 +162,14 @@ app.post('/api/certificates', (req, res) => {
     const sanitizedQrLabel = qrLabel ? String(qrLabel).trim() : null;
 
     if (!sanitizedStudentName || !sanitizedCourseName || !sanitizedDate) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        error: 'Barcha maydonlar bo\'sh bo\'lmasligi kerak' 
+        error: 'Barcha maydonlar bo\'sh bo\'lmasligi kerak'
       });
     }
 
     const certificates = readCertificates();
-    
+
     // Yangi sertifikat yaratish
     const newCertificate = {
       id: Date.now(), // Unique ID
@@ -201,14 +191,14 @@ app.post('/api/certificates', (req, res) => {
         message: 'Sertifikat muvaffaqiyatli qo\'shildi',
       });
     } else {
-      res.status(500).json({ 
+      res.status(500).json({
         success: false,
-        error: 'Server xatosi: Sertifikatni saqlashda muammo' 
+        error: 'Server xatosi: Sertifikatni saqlashda muammo'
       });
     }
   } catch (error) {
     console.error('POST /api/certificates error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
       error: 'Server xatosi: ' + error.message,
       message: NODE_ENV === 'development' ? error.stack : undefined,
@@ -220,21 +210,21 @@ app.post('/api/certificates', (req, res) => {
 app.delete('/api/certificates/:id', (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    
+
     if (isNaN(id)) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        error: 'Noto\'g\'ri ID format' 
+        error: 'Noto\'g\'ri ID format'
       });
     }
 
     const certificates = readCertificates();
     const certificateToDelete = certificates.find(cert => cert.id === id);
-    
+
     if (!certificateToDelete) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        error: 'Sertifikat topilmadi' 
+        error: 'Sertifikat topilmadi'
       });
     }
 
@@ -243,21 +233,21 @@ app.delete('/api/certificates/:id', (req, res) => {
     // Faylga yozish
     if (writeCertificates(filteredCertificates)) {
       console.log(`✅ Sertifikat o'chirildi: ${certificateToDelete.studentName} (ID: ${id})`);
-      res.json({ 
+      res.json({
         success: true,
-        message: 'Sertifikat muvaffaqiyatli o\'chirildi', 
+        message: 'Sertifikat muvaffaqiyatli o\'chirildi',
         id,
         deleted: certificateToDelete,
       });
     } else {
-      res.status(500).json({ 
+      res.status(500).json({
         success: false,
-        error: 'Server xatosi: Sertifikatni o\'chirishda muammo' 
+        error: 'Server xatosi: Sertifikatni o\'chirishda muammo'
       });
     }
   } catch (error) {
     console.error('DELETE /api/certificates/:id error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
       error: 'Server xatosi: ' + error.message,
       message: NODE_ENV === 'development' ? error.stack : undefined,
@@ -272,9 +262,9 @@ app.put('/api/certificates/:id', (req, res) => {
     const { studentName, courseName, date, qrLabel } = req.body;
 
     if (isNaN(id)) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        error: 'Noto\'g\'ri ID format' 
+        error: 'Noto\'g\'ri ID format'
       });
     }
 
@@ -282,9 +272,9 @@ app.put('/api/certificates/:id', (req, res) => {
     const index = certificates.findIndex(cert => cert.id === id);
 
     if (index === -1) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        error: 'Sertifikat topilmadi' 
+        error: 'Sertifikat topilmadi'
       });
     }
 
@@ -307,14 +297,14 @@ app.put('/api/certificates/:id', (req, res) => {
         message: 'Sertifikat muvaffaqiyatli yangilandi',
       });
     } else {
-      res.status(500).json({ 
+      res.status(500).json({
         success: false,
-        error: 'Server xatosi: Sertifikatni yangilashda muammo' 
+        error: 'Server xatosi: Sertifikatni yangilashda muammo'
       });
     }
   } catch (error) {
     console.error('PUT /api/certificates/:id error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
       error: 'Server xatosi: ' + error.message,
       message: NODE_ENV === 'development' ? error.stack : undefined,
@@ -326,8 +316,8 @@ app.put('/api/certificates/:id', (req, res) => {
 app.get('/api/health', (req, res) => {
   try {
     const certificates = readCertificates();
-    res.json({ 
-      status: 'OK', 
+    res.json({
+      status: 'OK',
       message: 'Server ishlamoqda',
       environment: NODE_ENV,
       certificatesCount: certificates.length,
@@ -386,7 +376,7 @@ if (process.env.VERCEL !== '1') {
     console.log(`💚 Health: http://localhost:${PORT}/api/health`);
     console.log(`📦 Certificates: http://localhost:${PORT}/api/certificates`);
     console.log('='.repeat(50));
-    
+
     // Server holatini tekshirish
     const certificates = readCertificates();
     console.log(`✅ ${certificates.length} ta sertifikat yuklandi`);
