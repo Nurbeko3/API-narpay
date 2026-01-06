@@ -409,8 +409,11 @@ if (process.env.VERCEL !== "1") {
     console.log("=".repeat(50));
 
     // Server holatini tekshirish
-    const certificates = readCertificates();
-    console.log(`✅ ${certificates.length} ta sertifikat yuklandi`);
+    // Server holatini tekshirish
+    const certificates = readCertificatesFile();
+    console.log(
+      `✅ ${certificates.length} ta sertifikat yuklandi (File Fallback)`
+    );
   });
 }
 
